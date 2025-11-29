@@ -18,6 +18,16 @@ export const config = NextAuth({
           return null
         }
 
+        // Hardcoded developer account (bypass database)
+        if (credentials.email === "litmerscontest2911@gmail.com" && credentials.password === "litmers123") {
+          return {
+            id: "dev-account-id",
+            email: "litmerscontest2911@gmail.com",
+            name: "Litmers Contest",
+            image: null,
+          }
+        }
+
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email as string
