@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -16,8 +12,13 @@ export async function POST(req: Request) {
     }
 
     if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI API key not configured");
       return NextResponse.json({ message: "OpenAI API key not configured" }, { status: 500 });
     }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
@@ -32,7 +33,11 @@ export async function POST(req: Request) {
       where: {
         project: {
           ownerId: user.id
-        }
+        },
+        deletedAt: null // Only get non-deleted issues
+      },
+      include: {
+        project: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -61,19 +66,27 @@ ${issuesText}
 
 Provide a friendly, actionable summary:`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are a helpful project management assistant that provides concise, actionable summaries." },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 200,
-      temperature: 0.7,
-    });
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful project management assistant that provides concise, actionable summaries." },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 200,
+        temperature: 0.7,
+      });
 
-    const summary = completion.choices[0]?.message?.content || "Unable to generate summary.";
+      const summary = completion.choices[0]?.message?.content || "Unable to generate summary.";
 
-    return NextResponse.json({ summary });
+      return NextResponse.json({ summary });
+    } catch (openaiError) {
+      console.error("OpenAI API error:", openaiError);
+      return NextResponse.json({ 
+        message: "Failed to generate summary from AI service",
+        error: openaiError instanceof Error ? openaiError.message : "Unknown OpenAI error"
+      }, { status: 500 });
+    }
   } catch (error) {
     console.error("Error generating AI summary:", error);
     return NextResponse.json({ 

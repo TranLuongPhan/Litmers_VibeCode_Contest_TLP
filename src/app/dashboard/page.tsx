@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 interface Issue {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   status: string;
   priority: string;
 }

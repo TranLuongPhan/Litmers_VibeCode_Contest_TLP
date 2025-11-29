@@ -38,8 +38,8 @@ export default function LoginPage() {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-            <h1 style={{ marginBottom: "1rem", textAlign: "center", fontSize: "1.5rem", color: "rgb(248, 250, 252)" }}>AI Powered Issue Tracking Web Application</h1>
-            <h2>Login</h2>
+            <h1 style={{ marginBottom: "0.5rem", textAlign: "center", fontSize: "1.5rem", color: "rgb(248, 250, 252)" }}>AI Powered Issue Tracking Web Application</h1>
+            <h2 style={{ textAlign: "center", marginTop: "0", marginBottom: "1rem" }}>Login</h2>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "300px" }}>
                 <input
                     type="email"

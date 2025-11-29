@@ -28,7 +28,7 @@ import { useState } from "react";
 interface Issue {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   status: string;
   priority: string;
 }
@@ -73,6 +73,11 @@ function SortableItem({ issue }: { issue: Issue }) {
       {...listeners}
     >
       <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", fontWeight: 600 }}>{issue.title}</h4>
+      {issue.description && (
+        <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.8rem", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {issue.description}
+        </p>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280" }}>
         <span>{issue.priority}</span>
       </div>
@@ -214,6 +219,11 @@ export default function KanbanBoard({ issues, onUpdateIssue }: KanbanBoardProps)
            }}
          >
            <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", fontWeight: 600 }}>{activeIssue.title}</h4>
+           {activeIssue.description && (
+             <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.8rem", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+               {activeIssue.description}
+             </p>
+           )}
            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280" }}>
              <span>{activeIssue.priority}</span>
            </div>
