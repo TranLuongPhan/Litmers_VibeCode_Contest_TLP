@@ -428,9 +428,8 @@ export default function KanbanBoard({ issues, onUpdateIssue, onUpdatePriority, o
                 ))}
               </div>
             </SortableContext>
-          </div>
-        );
-        })}
+          </DroppableColumn>
+        ))}
       </div>
 
       <DragOverlay dropAnimation={dropAnimation}>
