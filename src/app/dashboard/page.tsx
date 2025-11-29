@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
             <h1>Dashboard</h1>
             <p>Welcome, {session.user?.name || session.user?.email}</p>
             <p>This is a protected page.</p>
+            <LogoutButton />
         </div>
     );
 }
