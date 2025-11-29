@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const session = await auth();
     
     if (!session || !session.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Please login to use the service" }, { status: 401 });
     }
 
     const { name } = await req.json();
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     const session = await auth();
     
     if (!session || !session.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Please login to use the service" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({

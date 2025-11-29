@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         hasUser: !!session?.user, 
         email: session?.user?.email 
       });
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Please login to use the service" }, { status: 401 });
     }
 
     const { title, description, status, priority } = await req.json();
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
     const session = await auth();
     
     if (!session || !session.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Please login to use the service" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -108,7 +108,7 @@ export async function PUT(req: Request) {
     const session = await auth();
     
     if (!session || !session.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Please login to use the service" }, { status: 401 });
     }
 
     const { id, status, priority, title, description } = await req.json();

@@ -262,7 +262,7 @@ export default function DashboardPage() {
         <h2>My Issues</h2>
         {!session && (
           <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem", fontStyle: "italic" }}>
-            Demo mode: Showing sample data. Please log in to see your actual issues.
+            Please login to use the service
           </p>
         )}
         {issues.length === 0 ? (

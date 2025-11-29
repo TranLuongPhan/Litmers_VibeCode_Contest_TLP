@@ -8,7 +8,7 @@ export default function Home() {
       <div style={{ display: "flex", gap: "1rem" }}>
         <a href="/login" style={{ color: "blue" }}>Login</a>
         <a href="/register" style={{ color: "green" }}>Register</a>
-        <a href="/dashboard" style={{ color: "purple" }}>Dashboard</a>
+        <a href="/dashboard" style={{ color: "purple" }}>Dashboard(Guest)</a>
       </div>
     </main>
   );
