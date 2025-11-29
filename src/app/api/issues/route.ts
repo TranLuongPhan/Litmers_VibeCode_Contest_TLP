@@ -90,3 +90,55 @@ export async function GET(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const session = await auth();
+    
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id, status, priority, title, description } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ message: "Issue ID is required" }, { status: 400 });
+    }
+
+    // Verify ownership (simple check for MVP)
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email }
+    });
+
+    if (!user) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+    const issue = await prisma.issue.findUnique({
+        where: { id },
+        include: { project: true }
+    });
+
+    if (!issue) {
+        return NextResponse.json({ message: "Issue not found" }, { status: 404 });
+    }
+
+    if (issue.project.ownerId !== user.id) {
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    const updatedIssue = await prisma.issue.update({
+      where: { id },
+      data: {
+        status: status || undefined,
+        priority: priority || undefined,
+        title: title || undefined,
+        description: description || undefined,
+      }
+    });
+
+    return NextResponse.json(updatedIssue);
+  } catch (error) {
+    console.error("Error updating issue:", error);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import LogoutButton from "@/components/LogoutButton";
+import Link from "next/link";
+import KanbanBoard from "@/components/KanbanBoard";
 
 interface Issue {
   id: string;
@@ -11,13 +13,17 @@ interface Issue {
   priority: string;
 }
 
+import { useSession } from "next-auth/react";
+
 export default function DashboardPage() {
+  const { data: session } = useSession();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Backlog");
   const [priority, setPriority] = useState("MEDIUM");
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "board">("board");
 
   useEffect(() => {
     fetchIssues();
@@ -54,11 +60,48 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUpdateIssueStatus = async (id: string, newStatus: string) => {
+    // Optimistic update
+    setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, status: newStatus } : issue
+    ));
+
+    try {
+        await fetch("/api/issues", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, status: newStatus }),
+        });
+        // Optionally refetch to ensure sync
+    } catch (error) {
+        console.error("Failed to update status");
+        fetchIssues(); // Revert on error
+    }
+  };
+
   return (
     <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <h1>My Dashboard</h1>
-        <LogoutButton />
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <h3 style={{ margin: 0, color: "#666" }}>Hello, {session?.user?.name || "User"}</h3>
+          <h1 style={{ margin: 0 }}>My Dashboard</h1>
+        </div>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <button 
+            onClick={() => setViewMode(viewMode === "list" ? "board" : "list")}
+            style={{
+                padding: "0.5rem 1rem",
+                background: "white",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                cursor: "pointer"
+            }}
+          >
+            Switch to {viewMode === "list" ? "Board" : "List"} View
+          </button>
+          <Link href="/teams" style={{ color: "blue", textDecoration: "underline" }}>Manage Teams</Link>
+          <LogoutButton />
+        </div>
       </div>
 
       {/* Create Issue Form */}
@@ -108,47 +151,52 @@ export default function DashboardPage() {
         </form>
       </div>
 
-      {/* Issue List */}
+      {/* Issue Board / List */}
       <div>
         <h2>My Issues</h2>
-        <div style={{ display: "grid", gap: "1rem" }}>
-          {issues.map((issue) => (
-            <div key={issue.id} style={{ 
-              border: "1px solid #ddd", 
-              padding: "1rem", 
-              borderRadius: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
-              <div>
-                <h3 style={{ margin: "0 0 0.5rem 0" }}>{issue.title}</h3>
-                <p style={{ margin: 0, color: "#666" }}>{issue.description}</p>
-              </div>
-              <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                <span style={{ 
-                  padding: "0.25rem 0.5rem", 
-                  borderRadius: "4px", 
-                  background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
-                  color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
-                  fontSize: "0.875rem"
+        {issues.length === 0 ? (
+            <p>No issues yet. Create one above!</p>
+        ) : viewMode === "board" ? (
+            <KanbanBoard issues={issues} onUpdateIssue={handleUpdateIssueStatus} />
+        ) : (
+            <div style={{ display: "grid", gap: "1rem" }}>
+            {issues.map((issue) => (
+                <div key={issue.id} style={{ 
+                border: "1px solid #ddd", 
+                padding: "1rem", 
+                borderRadius: "8px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
                 }}>
-                  {issue.status}
-                </span>
-                <span style={{ 
-                  padding: "0.25rem 0.5rem", 
-                  borderRadius: "4px", 
-                  background: issue.priority === "HIGH" ? "#fee2e2" : "#f3f4f6",
-                  color: issue.priority === "HIGH" ? "#991b1b" : "#374151",
-                  fontSize: "0.875rem"
-                }}>
-                  {issue.priority}
-                </span>
-              </div>
+                <div>
+                    <h3 style={{ margin: "0 0 0.5rem 0" }}>{issue.title}</h3>
+                    <p style={{ margin: 0, color: "#666" }}>{issue.description}</p>
+                </div>
+                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                    <span style={{ 
+                    padding: "0.25rem 0.5rem", 
+                    borderRadius: "4px", 
+                    background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
+                    color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
+                    fontSize: "0.875rem"
+                    }}>
+                    {issue.status}
+                    </span>
+                    <span style={{ 
+                    padding: "0.25rem 0.5rem", 
+                    borderRadius: "4px", 
+                    background: issue.priority === "HIGH" ? "#fee2e2" : "#f3f4f6",
+                    color: issue.priority === "HIGH" ? "#991b1b" : "#374151",
+                    fontSize: "0.875rem"
+                    }}>
+                    {issue.priority}
+                    </span>
+                </div>
+                </div>
+            ))}
             </div>
-          ))}
-          {issues.length === 0 && <p>No issues yet. Create one above!</p>}
-        </div>
+        )}
       </div>
     </div>
   );
