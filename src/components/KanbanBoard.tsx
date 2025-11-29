@@ -36,12 +36,19 @@ interface Issue {
 interface KanbanBoardProps {
   issues: Issue[];
   onUpdateIssue: (id: string, newStatus: string) => void;
+  onUpdatePriority?: (id: string, newPriority: string) => void;
   onDeleteIssue?: (id: string) => void;
+  onEditIssue?: (issue: Issue) => void;
 }
 
 const COLUMNS = ["Backlog", "In Progress", "Done"];
 
-function SortableItem({ issue, onDeleteIssue }: { issue: Issue; onDeleteIssue?: (id: string) => void }) {
+function SortableItem({ issue, onDeleteIssue, onUpdatePriority, onEditIssue }: { 
+  issue: Issue; 
+  onDeleteIssue?: (id: string) => void;
+  onUpdatePriority?: (id: string, newPriority: string) => void;
+  onEditIssue?: (issue: Issue) => void;
+}) {
   const {
     attributes,
     listeners,
@@ -109,14 +116,63 @@ function SortableItem({ issue, onDeleteIssue }: { issue: Issue; onDeleteIssue?: 
           {issue.description}
         </p>
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#d1d5db" }}>
-        <span>{issue.priority}</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.75rem" }}>
+        {onUpdatePriority && (
+          <select
+            value={issue.priority}
+            onChange={(e) => {
+              e.stopPropagation();
+              onUpdatePriority(issue.id, e.target.value);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              padding: "0.25rem 0.5rem",
+              background: "#374151",
+              color: "white",
+              border: "1px solid #4b5563",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "0.75rem",
+              width: "100%"
+            }}
+          >
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        )}
+        {!onUpdatePriority && (
+          <span style={{ color: "#d1d5db" }}>{issue.priority}</span>
+        )}
+        {onEditIssue && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditIssue(issue);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              padding: "0.25rem 0.5rem",
+              background: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "0.7rem",
+              width: "100%"
+            }}
+            title="Edit issue"
+          >
+            Edit
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export default function KanbanBoard({ issues, onUpdateIssue, onDeleteIssue }: KanbanBoardProps) {
+export default function KanbanBoard({ issues, onUpdateIssue, onUpdatePriority, onDeleteIssue, onEditIssue }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
 
@@ -230,7 +286,13 @@ export default function KanbanBoard({ issues, onUpdateIssue, onDeleteIssue }: Ka
             >
               <div style={{ minHeight: "100px" }}>
                 {columns[columnId]?.map((issue) => (
-                  <SortableItem key={issue.id} issue={issue} onDeleteIssue={onDeleteIssue} />
+                  <SortableItem 
+                    key={issue.id} 
+                    issue={issue} 
+                    onDeleteIssue={onDeleteIssue}
+                    onUpdatePriority={onUpdatePriority}
+                    onEditIssue={onEditIssue}
+                  />
                 ))}
               </div>
             </SortableContext>

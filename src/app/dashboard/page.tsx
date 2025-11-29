@@ -31,11 +31,15 @@ export default function DashboardPage() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Backlog");
   const [priority, setPriority] = useState("MEDIUM");
-  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "board">("board");
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [editingIssue, setEditingIssue] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   useEffect(() => {
     if (session) {
@@ -47,16 +51,23 @@ export default function DashboardPage() {
   }, [session]);
 
   const fetchIssues = async () => {
-    const res = await fetch("/api/issues");
-    if (res.ok) {
-      const data = await res.json();
-      setIssues(data);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/issues");
+      if (res.ok) {
+        const data = await res.json();
+        setIssues(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateIssue = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setCreating(true);
     setError(null);
 
     try {
@@ -78,7 +89,7 @@ export default function DashboardPage() {
       console.error("Failed to create issue", error);
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   };
 
@@ -97,14 +108,88 @@ export default function DashboardPage() {
     ));
 
     try {
-        await fetch("/api/issues", {
+        const res = await fetch("/api/issues", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, status: newStatus }),
         });
-        // Optionally refetch to ensure sync
+        if (!res.ok) {
+          fetchIssues(); // Revert on error
+        }
     } catch (error) {
-        console.error("Failed to update status");
+        console.error("Failed to update status", error);
+        fetchIssues(); // Revert on error
+    }
+  };
+
+  const handleUpdateIssuePriority = async (id: string, newPriority: string) => {
+    // If not logged in, just update locally (fake data)
+    if (!session) {
+      setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, priority: newPriority } : issue
+      ));
+      return;
+    }
+
+    // Optimistic update
+    setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, priority: newPriority } : issue
+    ));
+
+    try {
+        const res = await fetch("/api/issues", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, priority: newPriority }),
+        });
+        if (!res.ok) {
+          fetchIssues(); // Revert on error
+        }
+    } catch (error) {
+        console.error("Failed to update priority", error);
+        fetchIssues(); // Revert on error
+    }
+  };
+
+  const handleStartEdit = (issue: Issue) => {
+    setEditingIssue(issue.id);
+    setEditTitle(issue.title);
+    setEditDescription(issue.description || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIssue(null);
+    setEditTitle("");
+    setEditDescription("");
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (!session) {
+      setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, title: editTitle, description: editDescription } : issue
+      ));
+      setEditingIssue(null);
+      return;
+    }
+
+    // Optimistic update
+    setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, title: editTitle, description: editDescription } : issue
+    ));
+
+    try {
+        const res = await fetch("/api/issues", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, title: editTitle, description: editDescription }),
+        });
+        if (res.ok) {
+          setEditingIssue(null);
+        } else {
+          fetchIssues(); // Revert on error
+        }
+    } catch (error) {
+        console.error("Failed to update issue", error);
         fetchIssues(); // Revert on error
     }
   };
@@ -259,17 +344,17 @@ export default function DashboardPage() {
             </select>
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={creating}
               style={{ 
                 padding: "0.5rem 1rem", 
                 background: "blue", 
                 color: "white", 
                 border: "none", 
                 borderRadius: "4px",
-                cursor: loading ? "not-allowed" : "pointer"
+                cursor: creating ? "not-allowed" : "pointer"
               }}
             >
-              {loading ? "Creating..." : "Create Issue"}
+              {creating ? "Creating..." : "Create Issue"}
             </button>
           </div>
         </form>
@@ -316,17 +401,47 @@ export default function DashboardPage() {
 
       {/* Issue Board / List */}
       <div>
-        <h2>My Issues</h2>
+        <h2>{viewMode === "board" ? "Issue Board" : "Issue List"}</h2>
         {!session && (
           <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem", fontStyle: "italic" }}>
             Please login to use the service
           </p>
         )}
-        {issues.length === 0 ? (
+        {loading && (
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            padding: "2rem",
+            color: "#9ca3af"
+          }}>
+            <div style={{ 
+              border: "3px solid #374151", 
+              borderTop: "3px solid #3b82f6", 
+              borderRadius: "50%", 
+              width: "40px", 
+              height: "40px", 
+              animation: "spin 1s linear infinite"
+            }}></div>
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}} />
+          </div>
+        )}
+        {!loading && issues.length === 0 ? (
             <p>No issues yet. Create one above!</p>
-        ) : viewMode === "board" ? (
-            <KanbanBoard issues={issues} onUpdateIssue={handleUpdateIssueStatus} onDeleteIssue={handleDeleteIssue} />
-        ) : (
+        ) : !loading && viewMode === "board" ? (
+            <KanbanBoard 
+              issues={issues} 
+              onUpdateIssue={handleUpdateIssueStatus} 
+              onUpdatePriority={handleUpdateIssuePriority}
+              onDeleteIssue={handleDeleteIssue}
+              onEditIssue={handleStartEdit}
+            />
+        ) : !loading && (
             <div style={{ display: "grid", gap: "1rem" }}>
             {issues.map((issue) => (
                 <div key={issue.id} style={{ 
@@ -338,49 +453,151 @@ export default function DashboardPage() {
                 justifyContent: "space-between",
                 alignItems: "center"
                 }}>
-                <div>
-                    <h3 style={{ margin: "0 0 0.5rem 0", color: "white" }}>{issue.title}</h3>
-                    <p style={{ margin: 0, color: "#d1d5db" }}>{issue.description}</p>
-                </div>
-                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                    {session ? (
-                      <select
-                        value={issue.status}
-                        onChange={(e) => handleUpdateIssueStatus(issue.id, e.target.value)}
+                <div style={{ flex: 1 }}>
+                  {editingIssue === issue.id ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
                         style={{
-                          padding: "0.25rem 0.5rem",
+                          padding: "0.5rem",
                           background: "#1f2937",
                           color: "white",
                           border: "1px solid #4b5563",
                           borderRadius: "4px",
-                          cursor: "pointer",
+                          fontSize: "0.95rem",
+                          fontWeight: "600"
+                        }}
+                      />
+                      <textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        style={{
+                          padding: "0.5rem",
+                          background: "#1f2937",
+                          color: "#d1d5db",
+                          border: "1px solid #4b5563",
+                          borderRadius: "4px",
+                          minHeight: "60px",
                           fontSize: "0.875rem"
                         }}
-                      >
-                        <option value="Backlog">Backlog</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Done">Done</option>
-                      </select>
+                      />
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button
+                          onClick={() => handleSaveEdit(issue.id)}
+                          style={{
+                            padding: "0.25rem 0.75rem",
+                            background: "#10b981",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "0.75rem"
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          style={{
+                            padding: "0.25rem 0.75rem",
+                            background: "#6b7280",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "0.75rem"
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 style={{ margin: "0 0 0.5rem 0", color: "white" }}>{issue.title}</h3>
+                      <p style={{ margin: 0, color: "#d1d5db" }}>{issue.description || "No description"}</p>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                    {session ? (
+                      <>
+                        <select
+                          value={issue.status}
+                          onChange={(e) => handleUpdateIssueStatus(issue.id, e.target.value)}
+                          style={{
+                            padding: "0.25rem 0.5rem",
+                            background: "#1f2937",
+                            color: "white",
+                            border: "1px solid #4b5563",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "0.875rem"
+                          }}
+                        >
+                          <option value="Backlog">Backlog</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Done">Done</option>
+                        </select>
+                        <select
+                          value={issue.priority}
+                          onChange={(e) => handleUpdateIssuePriority(issue.id, e.target.value)}
+                          style={{
+                            padding: "0.25rem 0.5rem",
+                            background: "#1f2937",
+                            color: "white",
+                            border: "1px solid #4b5563",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            fontSize: "0.875rem"
+                          }}
+                        >
+                          <option value="LOW">Low</option>
+                          <option value="MEDIUM">Medium</option>
+                          <option value="HIGH">High</option>
+                        </select>
+                        {editingIssue !== issue.id && (
+                          <button
+                            onClick={() => handleStartEdit(issue)}
+                            style={{
+                              padding: "0.25rem 0.5rem",
+                              background: "#3b82f6",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "0.75rem"
+                            }}
+                            title="Edit issue"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </>
                     ) : (
-                      <span style={{ 
-                        padding: "0.25rem 0.5rem", 
-                        borderRadius: "4px", 
-                        background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
-                        color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
-                        fontSize: "0.875rem"
-                      }}>
-                        {issue.status}
-                      </span>
+                      <>
+                        <span style={{ 
+                          padding: "0.25rem 0.5rem", 
+                          borderRadius: "4px", 
+                          background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
+                          color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
+                          fontSize: "0.875rem"
+                        }}>
+                          {issue.status}
+                        </span>
+                        <span style={{ 
+                          padding: "0.25rem 0.5rem", 
+                          borderRadius: "4px", 
+                          background: issue.priority === "HIGH" ? "#fee2e2" : "#f3f4f6",
+                          color: issue.priority === "HIGH" ? "#991b1b" : "#374151",
+                          fontSize: "0.875rem"
+                        }}>
+                          {issue.priority}
+                        </span>
+                      </>
                     )}
-                    <span style={{ 
-                    padding: "0.25rem 0.5rem", 
-                    borderRadius: "4px", 
-                    background: issue.priority === "HIGH" ? "#fee2e2" : "#f3f4f6",
-                    color: issue.priority === "HIGH" ? "#991b1b" : "#374151",
-                    fontSize: "0.875rem"
-                    }}>
-                    {issue.priority}
-                    </span>
                     {session && (
                       <button
                         onClick={() => handleDeleteIssue(issue.id)}
