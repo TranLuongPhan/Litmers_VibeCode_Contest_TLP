@@ -16,6 +16,7 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function TeamsPage() {
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/teams", {
@@ -44,9 +46,13 @@ export default function TeamsPage() {
       if (res.ok) {
         setNewTeamName("");
         fetchTeams();
+      } else {
+        const errorData = await res.json();
+        setError(errorData.message || "Failed to create team");
       }
     } catch (error) {
-      console.error("Failed to create team");
+      console.error("Failed to create team", error);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -73,6 +79,18 @@ export default function TeamsPage() {
       {/* Create Team Form */}
       <div style={{ background: "#f5f5f5", padding: "1.5rem", borderRadius: "8px", marginBottom: "2rem" }}>
         <h2>Create New Team</h2>
+        {error && (
+          <div style={{ 
+            background: "#fee2e2", 
+            color: "#991b1b", 
+            padding: "0.75rem", 
+            borderRadius: "4px", 
+            marginBottom: "1rem",
+            fontSize: "0.875rem"
+          }}>
+            {error}
+          </div>
+        )}
         <form onSubmit={handleCreateTeam} style={{ display: "flex", gap: "1rem" }}>
           <input
             type="text"

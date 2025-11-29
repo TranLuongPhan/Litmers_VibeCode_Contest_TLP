@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<"list" | "board">("board");
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchIssues();
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const handleCreateIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/issues", {
@@ -53,9 +55,13 @@ export default function DashboardPage() {
         setTitle("");
         setDescription("");
         fetchIssues(); // Refresh list
+      } else {
+        const errorData = await res.json();
+        setError(errorData.message || "Failed to create issue");
       }
     } catch (error) {
-      console.error("Failed to create issue");
+      console.error("Failed to create issue", error);
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -133,6 +139,18 @@ export default function DashboardPage() {
       {/* Create Issue Form */}
       <div style={{ background: "#f5f5f5", padding: "1.5rem", borderRadius: "8px", marginBottom: "2rem" }}>
         <h2>Create New Issue</h2>
+        {error && (
+          <div style={{ 
+            background: "#fee2e2", 
+            color: "#991b1b", 
+            padding: "0.75rem", 
+            borderRadius: "4px", 
+            marginBottom: "1rem",
+            fontSize: "0.875rem"
+          }}>
+            {error}
+          </div>
+        )}
         <form onSubmit={handleCreateIssue} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <input
             type="text"
