@@ -9,10 +9,14 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError("");
+
         try {
             const res = await fetch("/api/register", {
                 method: "POST",
@@ -24,10 +28,12 @@ export default function RegisterPage() {
                 router.push("/login");
             } else {
                 const data = await res.json();
-                setError(data.message || "Registration failed");
+                setError(data.message || "Registration failed. Please try again.");
             }
         } catch (err) {
-            setError("An error occurred");
+            setError("An error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -59,7 +65,18 @@ export default function RegisterPage() {
                     required
                     style={{ padding: "0.5rem" }}
                 />
-                <button type="submit" style={{ padding: "0.5rem", background: "green", color: "white" }}>Sign Up</button>
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                        padding: "0.5rem",
+                        background: isLoading ? "#666" : "green",
+                        color: "white",
+                        cursor: isLoading ? "not-allowed" : "pointer"
+                    }}
+                >
+                    {isLoading ? "Creating account..." : "Sign Up"}
+                </button>
             </form>
             {error && <p style={{ color: "red" }}>{error}</p>}
             <p>

@@ -1,36 +1,190 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VibeCode App
+
+A full-stack Next.js application with authentication, built with Prisma, NextAuth, and Supabase.
+
+## Features
+
+- 🔐 **Authentication**: Email/password authentication with NextAuth.js
+- 🗄️ **Database**: PostgreSQL via Supabase with Prisma ORM
+- 🎨 **Modern UI**: Built with Next.js 16 and React 19
+- 🚀 **Deployment**: Optimized for Vercel deployment
+- 🔒 **Protected Routes**: Middleware-based route protection
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Authentication**: NextAuth.js v5
+- **Database**: Supabase (PostgreSQL)
+- **ORM**: Prisma
+- **Deployment**: Vercel
+- **Language**: TypeScript
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ installed
+- A Supabase account (free tier available)
+- A Vercel account (optional, for deployment)
+
+### 1. Clone and Install
+
+```bash
+git clone <your-repo-url>
+cd vibecode-app
+npm install
+```
+
+### 2. Set Up Database
+
+Follow the detailed instructions in [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) to:
+- Create a Supabase project
+- Get your connection strings
+- Configure environment variables
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the project root (use `.env.example` as template):
+
+```bash
+# Database (from Supabase)
+DATABASE_URL="your-pooling-connection-string"
+DIRECT_URL="your-direct-connection-string"
+
+# Authentication
+AUTH_SECRET="generate-with-openssl-rand-base64-32"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Generate `AUTH_SECRET`:
+```bash
+openssl rand -base64 32
+```
+
+### 4. Run Database Migrations
+
+```bash
+npx prisma migrate dev --name init
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see your application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+vibecode-app/
+├── prisma/
+│   └── schema.prisma          # Database schema
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/          # NextAuth API routes
+│   │   │   └── register/      # Registration API
+│   │   ├── dashboard/         # Protected dashboard page
+│   │   ├── login/             # Login page
+│   │   ├── register/          # Registration page
+│   │   └── layout.tsx         # Root layout with SessionProvider
+│   ├── lib/
+│   │   └── prisma.ts          # Prisma client singleton
+│   ├── auth.ts                # NextAuth configuration
+│   └── middleware.ts          # Route protection middleware
+├── .env.example               # Environment variables template
+├── SUPABASE_SETUP.md          # Detailed Supabase setup guide
+└── vercel.json                # Vercel deployment config
+```
+
+## Available Scripts
+
+```bash
+# Development
+npm run dev          # Start development server
+
+# Production
+npm run build        # Build for production
+npm start            # Start production server
+
+# Database
+npx prisma studio    # Open database GUI
+npx prisma migrate dev    # Run migrations (development)
+npx prisma migrate deploy # Run migrations (production)
+npx prisma generate  # Generate Prisma Client
+
+# Linting
+npm run lint         # Run ESLint
+```
+
+## Authentication Flow
+
+1. **Registration** (`/register`):
+   - User enters name, email, and password
+   - Password is hashed with bcrypt
+   - User is stored in Supabase database
+   - Redirects to login page
+
+2. **Login** (`/login`):
+   - User enters email and password
+   - NextAuth validates credentials
+   - JWT session is created
+   - Redirects to dashboard
+
+3. **Protected Routes**:
+   - Middleware checks authentication
+   - Unauthenticated users are redirected to login
+   - Currently protects `/dashboard/*` routes
+
+## Deployment to Vercel
+
+### Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone)
+
+### Manual Deployment
+
+1. Push your code to GitHub
+2. Import project in Vercel dashboard
+3. Add environment variables in Vercel:
+   - `DATABASE_URL`
+   - `DIRECT_URL`
+   - `AUTH_SECRET`
+   - `NEXTAUTH_URL` (your production URL)
+4. Deploy!
+
+See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed deployment instructions.
+
+## Troubleshooting
+
+### Common Issues
+
+**"Environment variable not found"**
+- Ensure `.env` file exists in project root
+- Restart dev server after changing `.env`
+
+**"Can't reach database server"**
+- Verify Supabase connection strings are correct
+- Check that database password is correct
+- Ensure Supabase project is active
+
+**"Prisma Client not found"**
+- Run `npx prisma generate`
+- Restart dev server
+
+See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for more troubleshooting tips.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [NextAuth.js Documentation](https://next-auth.js.org)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Vercel Documentation](https://vercel.com/docs)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+MIT
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

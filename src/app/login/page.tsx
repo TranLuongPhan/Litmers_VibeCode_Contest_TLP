@@ -9,10 +9,14 @@ export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError("");
+
         try {
             const result = await signIn("credentials", {
                 email,
@@ -21,12 +25,14 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                setError("Invalid credentials");
+                setError("Invalid credentials. Please try again.");
             } else {
-                router.push("/");
+                router.push("/dashboard");
             }
         } catch (err) {
-            setError("An error occurred");
+            setError("An error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -50,7 +56,18 @@ export default function LoginPage() {
                     required
                     style={{ padding: "0.5rem" }}
                 />
-                <button type="submit" style={{ padding: "0.5rem", background: "blue", color: "white" }}>Login</button>
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    style={{
+                        padding: "0.5rem",
+                        background: isLoading ? "#666" : "blue",
+                        color: "white",
+                        cursor: isLoading ? "not-allowed" : "pointer"
+                    }}
+                >
+                    {isLoading ? "Logging in..." : "Login"}
+                </button>
             </form>
             {error && <p style={{ color: "red" }}>{error}</p>}
             <p>
