@@ -285,6 +285,7 @@ function SortableItem({ issue, onDeleteIssue, onUpdateIssue, onUpdatePriority, o
           <span style={{ color: "#d1d5db" }}>{issue.priority}</span>
         )}
       </div>
+      </div>
     </div>
   );
 }
