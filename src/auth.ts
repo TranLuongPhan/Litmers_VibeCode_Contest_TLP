@@ -4,9 +4,16 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
+import Google from "next-auth/providers/google"
+
 export const config = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
     Credentials({
       name: "Credentials",
       credentials: {
