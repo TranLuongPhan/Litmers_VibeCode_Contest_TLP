@@ -7,6 +7,11 @@ export async function POST(req: Request) {
     const session = await auth();
     
     if (!session || !session.user?.email) {
+      console.error("Unauthorized: No session or email", { 
+        hasSession: !!session, 
+        hasUser: !!session?.user, 
+        email: session?.user?.email 
+      });
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -32,7 +37,11 @@ export async function POST(req: Request) {
     });
 
     if (!project) {
-      return NextResponse.json({ message: "Project not found. Please re-login to create default project." }, { status: 404 });
+      console.error("Project not found for user", { userId: user.id, email: user.email });
+      return NextResponse.json({ 
+        message: "Project not found. Please re-login to create default project.",
+        userId: user.id 
+      }, { status: 404 });
     }
 
     const issue = await prisma.issue.create({
@@ -50,7 +59,11 @@ export async function POST(req: Request) {
     return NextResponse.json(issue, { status: 201 });
   } catch (error) {
     console.error("Error creating issue:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ 
+      message: "Internal Server Error",
+      error: process.env.NODE_ENV === "development" ? errorMessage : undefined
+    }, { status: 500 });
   }
 }
 

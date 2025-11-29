@@ -41,7 +41,11 @@ export async function POST(req: Request) {
     return NextResponse.json(team, { status: 201 });
   } catch (error) {
     console.error("Error creating team:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ 
+      message: "Internal Server Error",
+      error: process.env.NODE_ENV === "development" ? errorMessage : undefined
+    }, { status: 500 });
   }
 }
 
