@@ -59,26 +59,32 @@ export default function TeamsPage() {
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
-        <button 
-          onClick={() => router.push("/dashboard")}
-          style={{ 
-            padding: "0.5rem 1rem", 
-            border: "1px solid #ccc", 
-            background: "white", 
-            borderRadius: "4px",
-            cursor: "pointer"
-          }}
-        >
-          &larr; Back to Dashboard
-        </button>
-        <h1>Manage Teams</h1>
-      </div>
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        #create-team-form input::placeholder {
+          color: #9ca3af;
+        }
+      `}} />
+      <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+          <button 
+            onClick={() => router.push("/dashboard")}
+            style={{ 
+              padding: "0.5rem 1rem", 
+              border: "1px solid #ccc", 
+              background: "white", 
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+          >
+            &larr; Back to Dashboard
+          </button>
+          <h1>Manage Teams</h1>
+        </div>
 
-      {/* Create Team Form */}
-      <div style={{ background: "#f5f5f5", padding: "1.5rem", borderRadius: "8px", marginBottom: "2rem" }}>
-        <h2>Create New Team</h2>
+        {/* Create Team Form */}
+        <div style={{ background: "#374151", border: "2px solid #1f2937", padding: "1.5rem", borderRadius: "8px", marginBottom: "2rem" }}>
+          <h2 style={{ color: "white", margin: "0 0 1rem 0" }}>Create New Team</h2>
         {error && (
           <div style={{ 
             background: "#fee2e2", 
@@ -91,21 +97,21 @@ export default function TeamsPage() {
             {error}
           </div>
         )}
-        <form onSubmit={handleCreateTeam} style={{ display: "flex", gap: "1rem" }}>
+        <form id="create-team-form" onSubmit={handleCreateTeam} style={{ display: "flex", gap: "1rem" }}>
           <input
             type="text"
             placeholder="Team Name"
             value={newTeamName}
             onChange={(e) => setNewTeamName(e.target.value)}
             required
-            style={{ flex: 1, padding: "0.5rem" }}
+            style={{ flex: 1, padding: "0.5rem", background: "#1f2937", color: "white", border: "1px solid #4b5563", borderRadius: "4px" }}
           />
           <button 
             type="submit" 
             disabled={loading}
             style={{ 
               padding: "0.5rem 1rem", 
-              background: "blue", 
+              background: loading ? "#6b7280" : "#3b82f6", 
               color: "white", 
               border: "none", 
               borderRadius: "4px",
@@ -152,6 +158,7 @@ export default function TeamsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

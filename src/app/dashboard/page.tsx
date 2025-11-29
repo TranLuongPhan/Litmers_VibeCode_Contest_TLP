@@ -343,15 +343,35 @@ export default function DashboardPage() {
                     <p style={{ margin: 0, color: "#d1d5db" }}>{issue.description}</p>
                 </div>
                 <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                    <span style={{ 
-                    padding: "0.25rem 0.5rem", 
-                    borderRadius: "4px", 
-                    background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
-                    color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
-                    fontSize: "0.875rem"
-                    }}>
-                    {issue.status}
-                    </span>
+                    {session ? (
+                      <select
+                        value={issue.status}
+                        onChange={(e) => handleUpdateIssueStatus(issue.id, e.target.value)}
+                        style={{
+                          padding: "0.25rem 0.5rem",
+                          background: "#1f2937",
+                          color: "white",
+                          border: "1px solid #4b5563",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "0.875rem"
+                        }}
+                      >
+                        <option value="Backlog">Backlog</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                      </select>
+                    ) : (
+                      <span style={{ 
+                        padding: "0.25rem 0.5rem", 
+                        borderRadius: "4px", 
+                        background: issue.status === "Done" ? "#dcfce7" : issue.status === "In Progress" ? "#dbeafe" : "#f3f4f6",
+                        color: issue.status === "Done" ? "#166534" : issue.status === "In Progress" ? "#1e40af" : "#374151",
+                        fontSize: "0.875rem"
+                      }}>
+                        {issue.status}
+                      </span>
+                    )}
                     <span style={{ 
                     padding: "0.25rem 0.5rem", 
                     borderRadius: "4px", 
