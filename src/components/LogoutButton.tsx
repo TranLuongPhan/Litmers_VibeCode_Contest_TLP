@@ -13,7 +13,8 @@ export default function LogoutButton() {
                 border: "none",
                 borderRadius: "4px",
                 cursor: "pointer",
-                marginTop: "1rem"
+                display: "flex",
+                alignItems: "center"
             }}
         >
             Logout

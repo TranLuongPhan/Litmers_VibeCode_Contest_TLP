@@ -34,6 +34,30 @@ export async function POST(req: Request) {
             },
         });
 
+        // Create a default team for the new user
+        const team = await prisma.team.create({
+            data: {
+                name: "Personal Team",
+                ownerId: user.id,
+                members: {
+                    create: {
+                        userId: user.id,
+                        role: "OWNER"
+                    }
+                }
+            }
+        });
+
+        // Create a default project for the new user
+        await prisma.project.create({
+            data: {
+                name: "My Project",
+                description: "Your first project",
+                teamId: team.id,
+                ownerId: user.id,
+            }
+        });
+
         return NextResponse.json(
             { message: "User created successfully", user: { id: user.id, email: user.email, name: user.name } },
             { status: 201 }

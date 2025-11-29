@@ -66,20 +66,24 @@ export default function TeamsPage() {
         }
       `}} />
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
-          <button 
-            onClick={() => router.push("/dashboard")}
-            style={{ 
-              padding: "0.5rem 1rem", 
-              border: "1px solid #ccc", 
-              background: "white", 
-              borderRadius: "4px",
-              cursor: "pointer"
-            }}
-          >
-            &larr; Back to Dashboard
-          </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <h1>Manage Teams</h1>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <button 
+              onClick={() => router.push("/dashboard")}
+              style={{ 
+                padding: "0.5rem 1rem", 
+                border: "1px solid #ccc", 
+                background: "white", 
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center"
+              }}
+            >
+              &larr; Back to Dashboard
+            </button>
+          </div>
         </div>
 
         {/* Create Team Form */}

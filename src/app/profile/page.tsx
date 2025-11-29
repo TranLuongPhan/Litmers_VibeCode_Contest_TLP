@@ -148,7 +148,7 @@ export default function ProfilePage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <h1>Profile Management</h1>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/dashboard" style={{ color: "blue", textDecoration: "underline" }}>Back to Dashboard</Link>
+          <Link href="/dashboard" style={{ color: "blue", textDecoration: "underline", display: "flex", alignItems: "center" }}>Back to Dashboard</Link>
           <LogoutButton />
         </div>
       </div>

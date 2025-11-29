@@ -53,7 +53,20 @@ export default function RegisterPage() {
             });
 
             if (res.ok) {
-                router.push("/login");
+                // Auto-login after successful registration
+                const result = await signIn("credentials", {
+                    email,
+                    password,
+                    redirect: false,
+                });
+
+                if (result?.error) {
+                    // If auto-login fails, redirect to login page
+                    router.push("/login");
+                } else {
+                    // Auto-login successful, redirect to dashboard
+                    router.push("/dashboard");
+                }
             } else {
                 const data = await res.json();
                 setError(data.message || "Registration failed. Please try again.");
@@ -146,7 +159,7 @@ export default function RegisterPage() {
 
             {error && <p style={{ color: "red" }}>{error}</p>}
             <p>
-                Already have an account? <Link href="/login">Login</Link>
+                Already have an account? <Link href="/login" style={{ textDecoration: "underline" }}>Login</Link>
             </p>
         </div>
     );

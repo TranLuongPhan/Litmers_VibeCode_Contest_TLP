@@ -105,7 +105,7 @@ export default function LoginPage() {
 
             {error && <p style={{ color: "red" }}>{error}</p>}
             <p>
-                Don't have an account? <Link href="/register">Sign up</Link>
+                Don't have an account? <Link href="/register" style={{ textDecoration: "underline" }}>Sign up</Link>
             </p>
         </div>
     );

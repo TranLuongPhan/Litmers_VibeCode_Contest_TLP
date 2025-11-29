@@ -298,9 +298,9 @@ export default function DashboardPage() {
           <h1 style={{ margin: 0 }}>My Dashboard</h1>
         </div>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/profile" style={{ color: "blue", textDecoration: "underline" }}>Profile</Link>
-          <Link href="/teams" style={{ color: "blue", textDecoration: "underline" }}>Manage Teams</Link>
-            <LogoutButton />
+          <Link href="/profile" style={{ color: "blue", textDecoration: "underline", display: "flex", alignItems: "center" }}>Profile</Link>
+          <Link href="/teams" style={{ color: "blue", textDecoration: "underline", display: "flex", alignItems: "center" }}>Manage Teams</Link>
+          <LogoutButton />
         </div>
       </div>
 
