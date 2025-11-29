@@ -6,7 +6,7 @@ import {
   DragOverlay,
   closestCorners,
   KeyboardSensor,
-  PointerContext,
+  PointerSensor,
   useSensor,
   useSensors,
   DragStartEvent,
@@ -85,7 +85,7 @@ export default function KanbanBoard({ issues, onUpdateIssue }: KanbanBoardProps)
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerContext, {
+    useSensor(PointerSensor, {
         activationConstraint: {
             distance: 5, // Minimum drag distance before activation
         },
