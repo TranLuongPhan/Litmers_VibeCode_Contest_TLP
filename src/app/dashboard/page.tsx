@@ -12,6 +12,15 @@ interface Issue {
   description: string | null;
   status: string;
   priority: string;
+  assigneeId?: string | null;
+  assignee?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
+  dueDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Fake demo data for when user is not logged in
@@ -51,7 +60,19 @@ export default function DashboardPage() {
   const fetchIssues = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/issues");
+      // Build query string
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+      if (filterStatus) params.append("status", filterStatus);
+      if (filterAssignee) params.append("assigneeId", filterAssignee);
+      if (filterPriority) params.append("priority", filterPriority);
+      if (filterHasDueDate) params.append("hasDueDate", "true");
+      if (filterDueDateFrom) params.append("dueDateFrom", filterDueDateFrom);
+      if (filterDueDateTo) params.append("dueDateTo", filterDueDateTo);
+      params.append("sortBy", sortBy);
+      params.append("sortOrder", sortOrder);
+
+      const res = await fetch(`/api/issues?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setIssues(data);
@@ -471,6 +492,19 @@ export default function DashboardPage() {
               {loading ? "Refreshing..." : "🔄 Refresh"}
             </button>
             <button 
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                padding: "0.5rem 1rem",
+                background: showFilters ? "#3b82f6" : "white",
+                color: showFilters ? "white" : "#333",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}
+            >
+              🔍 Filters
+            </button>
+            <button 
               onClick={() => setViewMode(viewMode === "list" ? "board" : "list")}
               style={{
                 padding: "0.5rem 1rem",
@@ -484,6 +518,214 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Search and Filter Section */}
+        {showFilters && (
+          <div style={{ 
+            background: "#374151", 
+            border: "2px solid #1f2937", 
+            padding: "1.5rem", 
+            borderRadius: "8px", 
+            marginBottom: "1.5rem" 
+          }}>
+            <h3 style={{ color: "white", margin: "0 0 1rem 0" }}>Search & Filter Issues</h3>
+            
+            {/* Search */}
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Search by Title</label>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search issues by title..."
+                style={{
+                  width: "100%",
+                  padding: "0.5rem",
+                  background: "#1f2937",
+                  color: "white",
+                  border: "1px solid #4b5563",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+              {/* Status Filter */}
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Backlog">Backlog</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Done">Done</option>
+                </select>
+              </div>
+
+              {/* Priority Filter */}
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Priority</label>
+                <select
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                >
+                  <option value="">All Priorities</option>
+                  <option value="HIGH">High</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                >
+                  <option value="createdAt">Creation Date</option>
+                  <option value="updatedAt">Last Modified</option>
+                  <option value="dueDate">Due Date</option>
+                  <option value="priority">Priority</option>
+                </select>
+              </div>
+
+              {/* Sort Order */}
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Order</label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Due Date Filters */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+              <div>
+                <label style={{ color: "white", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <input
+                    type="checkbox"
+                    checked={filterHasDueDate}
+                    onChange={(e) => setFilterHasDueDate(e.target.checked)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  Has Due Date
+                </label>
+              </div>
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Due Date From</label>
+                <input
+                  type="date"
+                  value={filterDueDateFrom}
+                  onChange={(e) => setFilterDueDateFrom(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ color: "white", display: "block", marginBottom: "0.5rem" }}>Due Date To</label>
+                <input
+                  type="date"
+                  value={filterDueDateTo}
+                  onChange={(e) => setFilterDueDateTo(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    background: "#1f2937",
+                    color: "white",
+                    border: "1px solid #4b5563",
+                    borderRadius: "4px"
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                onClick={fetchIssues}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Apply Filters
+              </button>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterStatus("");
+                  setFilterAssignee("");
+                  setFilterPriority("");
+                  setFilterHasDueDate(false);
+                  setFilterDueDateFrom("");
+                  setFilterDueDateTo("");
+                  setSortBy("createdAt");
+                  setSortOrder("desc");
+                  fetchIssues();
+                }}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        )}
         {!session && (
           <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1rem", fontStyle: "italic" }}>
             Please login to use the service

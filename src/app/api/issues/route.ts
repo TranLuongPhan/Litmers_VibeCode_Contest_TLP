@@ -32,16 +32,43 @@ export async function POST(req: Request) {
 
     // Find the user's project (we created a default "My Project" on signup)
     // In a real app, projectId would be passed in the request
-    const project = await prisma.project.findFirst({
+    let project = await prisma.project.findFirst({
       where: { ownerId: user.id }
     });
 
+    // Auto-create project if it doesn't exist
     if (!project) {
-      console.error("Project not found for user", { userId: user.id, email: user.email });
-      return NextResponse.json({ 
-        message: "Project not found. Please re-login to create default project.",
-        userId: user.id 
-      }, { status: 404 });
+      console.log("Project not found for user, creating default project", { userId: user.id, email: user.email });
+      
+      // Find or create a team for the user
+      let team = await prisma.team.findFirst({
+        where: { ownerId: user.id }
+      });
+
+      if (!team) {
+        team = await prisma.team.create({
+          data: {
+            name: "Personal Team",
+            ownerId: user.id,
+            members: {
+              create: {
+                userId: user.id,
+                role: "OWNER"
+              }
+            }
+          }
+        });
+      }
+
+      // Create the default project
+      project = await prisma.project.create({
+        data: {
+          name: "My Project",
+          description: "Your first project",
+          teamId: team.id,
+          ownerId: user.id,
+        }
+      });
     }
 
     const issue = await prisma.issue.create({
@@ -83,19 +110,106 @@ export async function GET(req: Request) {
         return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // Get all issues for projects owned by the user
-    // For MVP, we assume user only sees their own project's issues
-    const issues = await prisma.issue.findMany({
-      where: {
-        project: {
-          ownerId: user.id
-        },
-        deletedAt: null // Only get non-deleted issues
+    // Parse query parameters
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "";
+    const assigneeId = searchParams.get("assigneeId") || "";
+    const priority = searchParams.get("priority") || "";
+    const hasDueDate = searchParams.get("hasDueDate") === "true";
+    const dueDateFrom = searchParams.get("dueDateFrom") || "";
+    const dueDateTo = searchParams.get("dueDateTo") || "";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+
+    // Build where clause
+    const where: any = {
+      project: {
+        ownerId: user.id
       },
-      orderBy: {
-        createdAt: 'desc'
+      deletedAt: null // Only get non-deleted issues
+    };
+
+    // Title text search
+    if (search) {
+      where.title = {
+        contains: search,
+        mode: "insensitive"
+      };
+    }
+
+    // Status filter
+    if (status) {
+      where.status = status;
+    }
+
+    // Assignee filter
+    if (assigneeId) {
+      where.assigneeId = assigneeId;
+    }
+
+    // Priority filter
+    if (priority) {
+      where.priority = priority;
+    }
+
+    // Due date filters
+    if (hasDueDate) {
+      where.dueDate = {
+        not: null
+      };
+    }
+
+    if (dueDateFrom || dueDateTo) {
+      where.dueDate = {};
+      if (dueDateFrom) {
+        where.dueDate.gte = new Date(dueDateFrom);
       }
+      if (dueDateTo) {
+        where.dueDate.lte = new Date(dueDateTo);
+      }
+    }
+
+    // Build orderBy clause
+    const orderBy: any = {};
+    if (sortBy === "createdAt" || sortBy === "updatedAt" || sortBy === "dueDate") {
+      orderBy[sortBy] = sortOrder;
+    } else if (sortBy === "priority") {
+      // Custom priority sorting: HIGH > MEDIUM > LOW
+      // We'll sort in memory for priority
+      orderBy.createdAt = "desc"; // Default fallback
+    } else {
+      orderBy.createdAt = "desc"; // Default
+    }
+
+    // Get all issues for projects owned by the user
+    let issues = await prisma.issue.findMany({
+      where,
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: sortBy === "priority" ? { createdAt: "desc" } : orderBy
     });
+
+    // Sort by priority if needed (HIGH > MEDIUM > LOW)
+    if (sortBy === "priority") {
+      const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      issues.sort((a, b) => {
+        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+        if (sortOrder === "asc") {
+          return aPriority - bPriority;
+        } else {
+          return bPriority - aPriority;
+        }
+      });
+    }
 
     return NextResponse.json(issues);
   } catch (error) {
