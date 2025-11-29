@@ -1,2 +1,0 @@
-DATABASE_URL="postgresql://postgres:Luongphan1997%40@db.ypcizxfutfxpudcrmyhv.supabase.co:5432/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres:Luongphan1997%40@db.ypcizxfutfxpudcrmyhv.supabase.co:5432/postgres"
