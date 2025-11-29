@@ -38,16 +38,19 @@ interface KanbanBoardProps {
   onUpdateIssue: (id: string, newStatus: string) => void;
   onUpdatePriority?: (id: string, newPriority: string) => void;
   onDeleteIssue?: (id: string) => void;
-  onEditIssue?: (issue: Issue) => void;
+  onUpdateTitle?: (id: string, newTitle: string) => void;
+  onUpdateDescription?: (id: string, newDescription: string) => void;
 }
 
 const COLUMNS = ["Backlog", "In Progress", "Done"];
 
-function SortableItem({ issue, onDeleteIssue, onUpdatePriority, onEditIssue }: { 
+function SortableItem({ issue, onDeleteIssue, onUpdateIssue, onUpdatePriority, onUpdateTitle, onUpdateDescription }: { 
   issue: Issue; 
   onDeleteIssue?: (id: string) => void;
+  onUpdateIssue?: (id: string, newStatus: string) => void;
   onUpdatePriority?: (id: string, newPriority: string) => void;
-  onEditIssue?: (issue: Issue) => void;
+  onUpdateTitle?: (id: string, newTitle: string) => void;
+  onUpdateDescription?: (id: string, newDescription: string) => void;
 }) {
   const {
     attributes,
@@ -110,13 +113,94 @@ function SortableItem({ issue, onDeleteIssue, onUpdatePriority, onEditIssue }: {
           ×
         </button>
       )}
-      <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", fontWeight: 600, color: "white", paddingRight: onDeleteIssue ? "1.5rem" : "0" }}>{issue.title}</h4>
-      {issue.description && (
+      {onUpdateTitle ? (
+        <input
+          type="text"
+          value={issue.title}
+          onChange={(e) => {
+            e.stopPropagation();
+            onUpdateTitle(issue.id, e.target.value);
+          }}
+          onBlur={(e) => {
+            e.stopPropagation();
+            onUpdateTitle(issue.id, e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          style={{
+            margin: "0 0 0.5rem 0",
+            padding: "0.25rem 0.5rem",
+            fontSize: "0.95rem",
+            fontWeight: 600,
+            color: "white",
+            background: "#374151",
+            border: "1px solid #4b5563",
+            borderRadius: "4px",
+            width: "100%",
+            paddingRight: onDeleteIssue ? "1.5rem" : "0.5rem"
+          }}
+        />
+      ) : (
+        <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", fontWeight: 600, color: "white", paddingRight: onDeleteIssue ? "1.5rem" : "0" }}>{issue.title}</h4>
+      )}
+      {onUpdateDescription ? (
+        <textarea
+          value={issue.description || ""}
+          onChange={(e) => {
+            e.stopPropagation();
+            onUpdateDescription(issue.id, e.target.value);
+          }}
+          onBlur={(e) => {
+            e.stopPropagation();
+            onUpdateDescription(issue.id, e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          placeholder="No description"
+          style={{
+            margin: "0 0 0.5rem 0",
+            padding: "0.25rem 0.5rem",
+            fontSize: "0.8rem",
+            color: "#d1d5db",
+            background: "#374151",
+            border: "1px solid #4b5563",
+            borderRadius: "4px",
+            width: "100%",
+            minHeight: "50px",
+            resize: "vertical"
+          }}
+        />
+      ) : issue.description ? (
         <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.8rem", color: "#d1d5db", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {issue.description}
         </p>
-      )}
+      ) : null}
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.75rem" }}>
+        {onUpdateIssue && (
+          <select
+            value={issue.status}
+            onChange={(e) => {
+              e.stopPropagation();
+              onUpdateIssue(issue.id, e.target.value);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              padding: "0.25rem 0.5rem",
+              background: "#374151",
+              color: "white",
+              border: "1px solid #4b5563",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "0.75rem",
+              width: "100%"
+            }}
+          >
+            <option value="Backlog">Backlog</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Done">Done</option>
+          </select>
+        )}
         {onUpdatePriority && (
           <select
             value={issue.priority}
@@ -145,34 +229,12 @@ function SortableItem({ issue, onDeleteIssue, onUpdatePriority, onEditIssue }: {
         {!onUpdatePriority && (
           <span style={{ color: "#d1d5db" }}>{issue.priority}</span>
         )}
-        {onEditIssue && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditIssue(issue);
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              padding: "0.25rem 0.5rem",
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.7rem",
-              width: "100%"
-            }}
-            title="Edit issue"
-          >
-            Edit
-          </button>
-        )}
       </div>
     </div>
   );
 }
 
-export default function KanbanBoard({ issues, onUpdateIssue, onUpdatePriority, onDeleteIssue, onEditIssue }: KanbanBoardProps) {
+export default function KanbanBoard({ issues, onUpdateIssue, onUpdatePriority, onDeleteIssue, onUpdateTitle, onUpdateDescription }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
 
@@ -290,8 +352,10 @@ export default function KanbanBoard({ issues, onUpdateIssue, onUpdatePriority, o
                     key={issue.id} 
                     issue={issue} 
                     onDeleteIssue={onDeleteIssue}
+                    onUpdateIssue={onUpdateIssue}
                     onUpdatePriority={onUpdatePriority}
-                    onEditIssue={onEditIssue}
+                    onUpdateTitle={onUpdateTitle}
+                    onUpdateDescription={onUpdateDescription}
                   />
                 ))}
               </div>

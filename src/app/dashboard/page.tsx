@@ -37,9 +37,6 @@ export default function DashboardPage() {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [editingIssue, setEditingIssue] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
 
   useEffect(() => {
     if (session) {
@@ -151,45 +148,58 @@ export default function DashboardPage() {
     }
   };
 
-  const handleStartEdit = (issue: Issue) => {
-    setEditingIssue(issue.id);
-    setEditTitle(issue.title);
-    setEditDescription(issue.description || "");
-  };
-
-  const handleCancelEdit = () => {
-    setEditingIssue(null);
-    setEditTitle("");
-    setEditDescription("");
-  };
-
-  const handleSaveEdit = async (id: string) => {
+  const handleUpdateTitle = async (id: string, newTitle: string) => {
     if (!session) {
       setIssues(prev => prev.map(issue => 
-        issue.id === id ? { ...issue, title: editTitle, description: editDescription } : issue
+        issue.id === id ? { ...issue, title: newTitle } : issue
       ));
-      setEditingIssue(null);
       return;
     }
 
     // Optimistic update
     setIssues(prev => prev.map(issue => 
-        issue.id === id ? { ...issue, title: editTitle, description: editDescription } : issue
+        issue.id === id ? { ...issue, title: newTitle } : issue
     ));
 
     try {
         const res = await fetch("/api/issues", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, title: editTitle, description: editDescription }),
+            body: JSON.stringify({ id, title: newTitle }),
         });
-        if (res.ok) {
-          setEditingIssue(null);
-        } else {
+        if (!res.ok) {
           fetchIssues(); // Revert on error
         }
     } catch (error) {
-        console.error("Failed to update issue", error);
+        console.error("Failed to update title", error);
+        fetchIssues(); // Revert on error
+    }
+  };
+
+  const handleUpdateDescription = async (id: string, newDescription: string) => {
+    if (!session) {
+      setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, description: newDescription } : issue
+      ));
+      return;
+    }
+
+    // Optimistic update
+    setIssues(prev => prev.map(issue => 
+        issue.id === id ? { ...issue, description: newDescription } : issue
+    ));
+
+    try {
+        const res = await fetch("/api/issues", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, description: newDescription }),
+        });
+        if (!res.ok) {
+          fetchIssues(); // Revert on error
+        }
+    } catch (error) {
+        console.error("Failed to update description", error);
         fetchIssues(); // Revert on error
     }
   };
@@ -439,7 +449,8 @@ export default function DashboardPage() {
               onUpdateIssue={handleUpdateIssueStatus} 
               onUpdatePriority={handleUpdateIssuePriority}
               onDeleteIssue={handleDeleteIssue}
-              onEditIssue={handleStartEdit}
+              onUpdateTitle={handleUpdateTitle}
+              onUpdateDescription={handleUpdateDescription}
             />
         ) : !loading && (
             <div style={{ display: "grid", gap: "1rem" }}>
@@ -454,12 +465,13 @@ export default function DashboardPage() {
                 alignItems: "center"
                 }}>
                 <div style={{ flex: 1 }}>
-                  {editingIssue === issue.id ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {session ? (
+                    <>
                       <input
                         type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
+                        value={issue.title}
+                        onChange={(e) => handleUpdateTitle(issue.id, e.target.value)}
+                        onBlur={(e) => handleUpdateTitle(issue.id, e.target.value)}
                         style={{
                           padding: "0.5rem",
                           background: "#1f2937",
@@ -467,12 +479,16 @@ export default function DashboardPage() {
                           border: "1px solid #4b5563",
                           borderRadius: "4px",
                           fontSize: "0.95rem",
-                          fontWeight: "600"
+                          fontWeight: "600",
+                          width: "100%",
+                          marginBottom: "0.5rem"
                         }}
                       />
                       <textarea
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
+                        value={issue.description || ""}
+                        onChange={(e) => handleUpdateDescription(issue.id, e.target.value)}
+                        onBlur={(e) => handleUpdateDescription(issue.id, e.target.value)}
+                        placeholder="No description"
                         style={{
                           padding: "0.5rem",
                           background: "#1f2937",
@@ -480,40 +496,12 @@ export default function DashboardPage() {
                           border: "1px solid #4b5563",
                           borderRadius: "4px",
                           minHeight: "60px",
-                          fontSize: "0.875rem"
+                          fontSize: "0.875rem",
+                          width: "100%",
+                          resize: "vertical"
                         }}
                       />
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          onClick={() => handleSaveEdit(issue.id)}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            background: "#10b981",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "0.75rem"
-                          }}
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            background: "#6b7280",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "0.75rem"
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
+                    </>
                   ) : (
                     <>
                       <h3 style={{ margin: "0 0 0.5rem 0", color: "white" }}>{issue.title}</h3>
@@ -558,23 +546,6 @@ export default function DashboardPage() {
                           <option value="MEDIUM">Medium</option>
                           <option value="HIGH">High</option>
                         </select>
-                        {editingIssue !== issue.id && (
-                          <button
-                            onClick={() => handleStartEdit(issue)}
-                            style={{
-                              padding: "0.25rem 0.5rem",
-                              background: "#3b82f6",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "0.75rem"
-                            }}
-                            title="Edit issue"
-                          >
-                            Edit
-                          </button>
-                        )}
                       </>
                     ) : (
                       <>
